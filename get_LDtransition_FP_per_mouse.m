@@ -13,7 +13,6 @@ if nargin==0
     
     %mouse_info.ID='107R';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation, but don't have estrous cycle
    % mouse_info.ID='115L';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female also has hormonal manipulation
-    % mouse_info.ID='A116R';mouse_info.side='L';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation
     %mouse_info.ID='119LL';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female.also has hormonal manipulation
     % mouse_info.ID='122R';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation
     %mouse_info.ID='123L';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation. problematic fs
