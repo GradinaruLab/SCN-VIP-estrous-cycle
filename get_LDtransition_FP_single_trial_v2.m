@@ -97,8 +97,8 @@ B3 = rmmissing(baseline2);% remove nan
  % check how the data looks like
  if plot1
      figure
-     plot(data.t,data.dF); hold on
-     plot(data.t,dF_F); hold on
+     plot(data.t,data.dF); hold on % before data processing 
+     plot(data.t,dF_F); hold on % after 
      ylim([-20 35])
  end
 % recording starts at ZT10 for 2 hours 
@@ -290,7 +290,7 @@ B1 = smoothdata(P1,1,'gaussian',GW);
 % find the mean frequencies of the obsereved peaks
 %GW=[12 180 180];% the first window fits low freq, up to 0.03Hz. the second fits the 0.5 to 2 Hz
 %f_limits=[0 0.03 ;0.5 1.1; 1.2 1.8];% define the interval for freq max identification to be avergaed
-f_limits=[0 0.03 ;0.03 0.5; 0.5 1.6];% define the interval for freq max identification to be avergaed
+f_limits=[0.0005 0.03 ;0.03 0.1; 0.1 0.35];% define the interval for freq max identification to be avergaed
 %f_limits=[0 0.03 ;0.5 1.6];%HZ define the interval for freq max identification to be avergaed
 %f_limits=[0 0.03 ;0.03 0.2];%HZ define the interval for freq max identification to be avergaed
 

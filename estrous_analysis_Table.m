@@ -71,7 +71,9 @@ switch exp
         G=eval(['findgroups(new_T2.' exp ')']);% get identification of the different conditions as different groups
     case 'Exp122'
         n_conditions=5;
-        G=eval(['findgroups(new_T2.Var1)']);
+      %  G=eval(['findgroups(new_T2.Var1)']);
+          G=eval(['findgroups(new_T2.' exp ')']);% get identification of the different conditions as different groups
+
     otherwise % should be checked here- which exp needs the upper version and which the lower
         n_conditions=2; % before and after - CHECK!!!!
         G=eval(['findgroups(new_T2.Var1)']);% get identification of the different conditions as different groups
@@ -93,22 +95,24 @@ for n=1:length(G_order)% go over the different conditions
         
         var_temp=T_temp.Properties.VariableNames{k};
         % S=sortrows(T_temp,var_temp);
-        G_temp=est_state2num_table(eval(['T_temp.' var_temp]));% sorted by ABC order, so D=1,E=2,M=3,P=4
-        G_temp=G_temp';
-        T_array(idi,L)=length([find(G_temp==1) ;find(G_temp==3)]);%D&M
-        T_array(idi,L+1)=length(find(G_temp==4));%P
-        T_array(idi,L+2)=length(find(G_temp==2));%E
-        if length(diff(find(G_temp==4)))>1;
-            T_array(idi,L+3)=median(diff(find(G_temp==4)));% median days between P
-        elseif isempty(find(G_temp==4))
-            T_array(idi,L+3)=nan;
-        elseif length(diff(find(G_temp==4)))==1
-            T_array(idi,L+3)=diff(find(G_temp==4));% median days between P
-            if find(G_temp==4)==0
-               T_array(idi,L+3)=max(21-find(G_temp==4), find(G_temp==4));
+        states1=eval(['T_temp.' var_temp]);
+        if ~isempty(states1)
+            G_temp=est_state2num_table(eval(['T_temp.' var_temp]));% sorted by ABC order, so D=1,E=2,M=3,P=4
+            G_temp=G_temp';
+            T_array(idi,L)=length([find(G_temp==1) ;find(G_temp==3)]);%D&M
+            T_array(idi,L+1)=length(find(G_temp==4));%P
+            T_array(idi,L+2)=length(find(G_temp==2));%E
+            if length(diff(find(G_temp==4)))>1;
+                T_array(idi,L+3)=median(diff(find(G_temp==4)));% median days between P
+            elseif isempty(find(G_temp==4))
+                T_array(idi,L+3)=nan;
+            elseif length(diff(find(G_temp==4)))==1
+                T_array(idi,L+3)=diff(find(G_temp==4));% median days between P
+                if find(G_temp==4)==0
+                    T_array(idi,L+3)=max(21-find(G_temp==4), find(G_temp==4));
+                end
             end
         end
-        
     end
     % gives titles per condtion n
     V_names=[V_names {['nDM_C' num2str(n)] ['nP_C' num2str(n)] ['nE_C' num2str(n)] ['cycle_length_C' num2str(n)]}];
@@ -144,8 +148,8 @@ switch exp
         %T1=T1([1:13 15],:);
         
     case 'Exp25'% VIP DREADD
-        Group={'ctrl' 'ctrl' 'exp' 'exp' 'exp' 'ctrl' 'ctrl' 'exp' 'exp' 'exp' 'exp' 'exp' 'exp' 'exp' 'ctrl' 'ctrl' 'ctrl' 'ctrl'};
-        
+        % 7 exp,  6 ctrl. 4 were not responsive to light effect
+        Group={'ctrl' 'ctrl' 'exp' 'exp' 'exp' 'ctrl' 'ctrl' 'exp' 'exp' 'ctrl' 'exp' 'exp' 'ctrl' };
         T1=addvars(T1,Group','Before','nDM_C1');
     case 'Exp125'% VIP DREADD and ChR2 just baseline and rescue
         Group={'DD+L1+L2' 'DD+L1+L2' 'DD+L1+L2' 'DD+L1+L2' 'DD+L1+L2' 'DD+L1+L2' 'DD+L1+L2' 'DD+L1' 'DD+L1' 'DD+L1' 'DD+L1' 'DD+L1' 'DD+L1'};
@@ -233,7 +237,7 @@ for n=1:length(G_order)% go over the different conditions
         case 'Exp120';  X=[n n+3];
     end
     
-    bh=bar(X,this_mean,0.3); hold on
+    bh=bar(X,this_mean,0.6); hold on
     bh.FaceColor=[0.75 0.75 0.75];
     ylim([0 6])
 end
@@ -250,8 +254,8 @@ switch exp
         gca.XTick=[X(1,:) X(2,:) X(3,:) X(4,:)];
         gca.XTickLabel=['C1'];
     case 'Exp25'% VIP DREADD
-        X(1,:)=[1:4];  X(2,:)=[6:9];
-        gca.XTick=[X(1,:) X(2,:)];
+        X(1,:)=[1:4];  X(2,:)=[6:9]; %X(3,:)=[11:14];
+        gca.XTick=[X(1,:) X(2,:) ];
     case 'Exp125'% VIP DREADD ChR2-  just compare baseline with rescure
         X(1,:)=[1:3];  X(2,:)=[5:7];
         gca.XTick=[X(1,:) X(2,:)];
@@ -317,11 +321,11 @@ for i=1:length(ordG)
     lgd_title=[lgd_title T1.Var1(lgd_ind)];
 end
 xticklabels(lgd_title(ordG))
-switch exp
-    case 'Exp122' % VIP-cre Light manipulation
-     set(gca,'XTick',[1:5]);
-     set(gca,'XTickLabel',phases.Var1);
-end
+% switch exp
+%     case 'Exp122' % VIP-cre Light manipulation
+%      set(gca,'XTick',[1:5]);
+%      set(gca,'XTickLabel',phases.Var1);
+% end
 ylim([0 6])
 % now plot the distributions
 clear these_val
@@ -330,7 +334,7 @@ figure
 switch exp
     case 'Exp23'; order=[1 4 2 5 3 6];% VIP ChR2
     case 'Exp24'; order=[1:9]; % C57 Light manipulation
-    case 'Exp25'; order=[1 2 6 7 3 4 5 8 9 10]; % VIP DREADD Group
+     
     case {'Exp120' 'Exp126'}; order=[1:13]; % GnRHcas9/ablation 
     case 'Exp122' ; order=[1:5];% VIP-cre light manipulation
 end
@@ -351,7 +355,8 @@ for gi=1:length(ordG)
     L1=length(ordG)*length(these_val);
     for i=1:n_conditions
         l=l+1;
-        subplot(length(ordG),length(these_val),order(l))
+        %subplot(length(ordG),length(these_val),order(l))
+        subplot(length(ordG),length(these_val),i)
         h=pie(sum(these_val{i}(G_exp==k,:),1));hold on
     end
 end
@@ -390,5 +395,6 @@ for ci=1:size(all_np,2)
         disp (['cycle length, condition ' num2str(ci) ' group ' num2str(gi) ': ' num2str(mean(all_cycle_length(find(G_exp==gi),ci))) '+-' num2str(std(all_np(find(G_exp==gi),ci))/sqrt(length(find(G_exp==gi))))])
     end
 end
+
 1
 

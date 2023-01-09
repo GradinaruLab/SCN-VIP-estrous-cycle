@@ -13,6 +13,7 @@ if nargin==0
     
     %mouse_info.ID='107R';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation, but don't have estrous cycle
    % mouse_info.ID='115L';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female also has hormonal manipulation
+    % mouse_info.ID='A116R';mouse_info.side='L';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation
     %mouse_info.ID='119LL';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female.also has hormonal manipulation
     % mouse_info.ID='122R';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation
     %mouse_info.ID='123L';mouse_info.side='R';OVX=1;mouse_info.sex='Female';% female. also has hormonal manipulation. problematic fs
@@ -22,8 +23,8 @@ if nargin==0
   %  mouse_info.ID='166R';mouse_info.side='R';OVX=0;mouse_info.sex='Female';% female.
    % mouse_info.ID='175L';mouse_info.side='L';OVX=0;mouse_info.sex='Female';% female
     %mouse_info.ID='176RL';mouse_info.side='L';OVX=0;mouse_info.sex='Female';% female
-   %  mouse_info.ID='198L';mouse_info.side='R';OVX=0;mouse_info.sex='Female';% female
-    mouse_info.ID='200RR';mouse_info.side='R';OVX=0;mouse_info.sex='Female';%% female
+     mouse_info.ID='198L';mouse_info.side='R';OVX=0;mouse_info.sex='Female';% female
+   % mouse_info.ID='200RR';mouse_info.side='R';OVX=0;mouse_info.sex='Female';%% female
     
    % males
 %  mouse_info.ID='25L';mouse_info.side='L';OVX=0; mouse_info.sex='Male';% male
@@ -73,6 +74,7 @@ analysis_params.minimum_trials=mouse_info.minimum_trials;
 analysis_params.n_windows=15;
 analysis_params.std_thresh=0.4; % 
 analysis_params.F=1;
+newF='newF'
 trial_info.path='D:\DATA_Glab\fiberphotometry\';
 
 %cc=0;
@@ -97,7 +99,7 @@ sess_ind_tmp=intersect(find(strcmp(All_IDS, ['VIPGC' mouse_info.ID])),find(All_i
 sess_ind=intersect(sess_ind_tmp,find(strcmp(All_Snames,'Sess')));
 onset_ind=intersect(sess_ind_tmp,find(strcmp(All_Snames,'SessOnset')));
 
-this_filename=[my_path 'LDtransition\output_' mouse_info.analysis_type '_' mouse_info.ID '_MT' num2str(analysis_params.minimum_trials) '.mat'];
+this_filename=[my_path 'LDtransition\output_' mouse_info.analysis_type '_' newF mouse_info.ID '_MT' num2str(analysis_params.minimum_trials) '.mat'];
 
 % switch mouse_info.ID
 %     case {'247RRL';'246RL';'261RL';'259R'};  OVX=1;
@@ -185,7 +187,12 @@ end
 
 % after fft was included in the analysis ;Feb 2022
 if FFT_cc
-     new_f_limits=[0 0.03; 0.03 0.1; 0.1 0.35; 0.35 0.65; 0.65 1.0; 1.0 1.35 ; 1.35 1.65; 1.65 2.3; 2.3 4];
+    switch newF
+        case 'newF'
+             new_f_limits=[0.0005 0.007; 0.007 0.05; 0.05 0.1; 0.1 0.25; 0.25 0.45; 0.45 1.0 ; 1.0 1.35];
+        otherwise
+            new_f_limits=[0.0005 0.03; 0.03 0.1; 0.1 0.35; 0.35 0.65; 0.65 1.0; 1.0 1.35 ; 1.35 1.65; 1.65 2.3; 2.3 4];
+    end
      new_f_limits=flip(new_f_limits,1);
             
 %     switch mouse_info.analysis_type
@@ -360,6 +367,7 @@ end
 for i=1:length(estrus_states_titles)
     estrus_states_ind{i}=find(strcmp(estrus_states,estrus_states_titles{i}));
 end
+dF1(:,:,1:300)=0;% clean the first few seconds
 
 clear mean_over_all_samples mean_dF_over_estrus_samples rate_over_estrus_samples mean_dF_over_hour width_over_estrus_samples mean_rate_over_estrus_samples mean_width_over_estrus_samples
 mean_dF_over_all_samples(:,:)=nanmean(dF1,1);
@@ -738,7 +746,7 @@ output.estrus_states=estrus_states;
 output.new_f_limits=new_f_limits;
 
 if ~exist(this_filename)
-    save([my_path '\LDtransition\output_' mouse_info.analysis_type '_' mouse_info.ID '_MT' num2str(analysis_params.minimum_trials)], 'output','-v7.3')
+    save([my_path '\LDtransition\output_' mouse_info.analysis_type '_' newF mouse_info.ID '_MT' num2str(analysis_params.minimum_trials)], 'output','-v7.3')
 else
     opts.Interpreter = 'tex';
     % Include the desired Default answer
@@ -749,7 +757,7 @@ else
         'Yes','No',opts);
     switch answer
         case  'Yes'
-            save([my_path '\LDtransition\output_' mouse_info.analysis_type '_' mouse_info.ID '_MT' num2str(analysis_params.minimum_trials)], 'output','-v7.3')
+            save([my_path '\LDtransition\output_' mouse_info.analysis_type '_' newF mouse_info.ID '_MT' num2str(analysis_params.minimum_trials)], 'output','-v7.3')
     end
 end
 % if mouse_info.analysis_type

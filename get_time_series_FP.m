@@ -5,7 +5,7 @@ function get_time_series_FP
 %% get experimental information: 
 my_path='D:\DATA_Glab\fiberphotometry\';
 [NUM,TXT]=xlsread([my_path 'FP_VIP_GC4.xlsx']);
-
+by_estrous=0; % one means by P E M D 
 %%%%%%%%%%%%%%%%%%
 % Females. 1-6
 ind=0;
@@ -37,6 +37,12 @@ n_females=ind;
 % n_OVX=4;
 
 
+if by_estrous %  by P E M D
+    for idi=1:n_females
+        mouse_info{idi}.sex='Female2';
+    end
+end
+    
 
 % get data for each mouse
 % for idi=1:length(mouse_info)
@@ -45,13 +51,20 @@ n_females=ind;
 % get data for each mouse
 for idi=1:length(mouse_info)
     switch mouse_info{idi}.sex
+        case 'Female2'
+                if ~exist ([my_path 'time_series_output_general2_' mouse_info{idi}.ID '.mat' ])
+                    disp(['get data for ' mouse_info{idi}.ID])
+                    output= get_time_series_FP_per_mouse (mouse_info{idi});
+                else
+                    load([my_path 'time_series_output_general2_' mouse_info{idi}.ID '.mat' ])% load 'output'
+                end
         case 'Female'
-            if ~exist ([my_path 'time_series_output_general_' mouse_info{idi}.ID '.mat' ])
-                disp(['get data for ' mouse_info{idi}.ID])
-                output= get_time_series_FP_per_mouse (mouse_info{idi});
-            else
-                load([my_path 'time_series_output_general_' mouse_info{idi}.ID '.mat' ])% load 'output'
-            end
+                if ~exist ([my_path 'time_series_output_general_' mouse_info{idi}.ID '.mat' ])
+                    disp(['get data for ' mouse_info{idi}.ID])
+                    output= get_time_series_FP_per_mouse (mouse_info{idi});
+                else
+                    load([my_path 'time_series_output_general_' mouse_info{idi}.ID '.mat' ])% load 'output'
+                end
 %         case {'Male','OVX'}
 %             if ~exist ([my_path 'time_series_output_general_' mouse_info{idi}.ID '.mat' ])
 %                 disp(['get data for ' mouse_info{idi}.ID])
@@ -67,11 +80,18 @@ clear output
 output=all_output; 
 clear all_output
 %%%%%%%%%%%%%%%    
-for i=1:length(mouse_info)
-    mouse_info{i}.analysis_type='estrous_cycle';
-end
 
-estrus_states_titles={'P-2','P-1','P+0','P+1','P+2','OVX'};
+if by_estrous
+    estrus_states_titles={'P','E','M','D','OVX'};
+    for i=1:length(mouse_info)
+        mouse_info{i}.analysis_type='estrous_cycle2';
+    end
+else
+    estrus_states_titles={'P-2','P-1','P+0','P+1','P+2','OVX'};
+    for i=1:length(mouse_info)
+        mouse_info{i}.analysis_type='estrous_cycle';
+    end
+end
 [ALL_colors,color_ind]=get_estrus_colors(estrus_states_titles);
 
 
@@ -82,10 +102,11 @@ end
 
 
 % arrange data
+clear med_dF_dark_light_over_estrus_samples med_rate_dark_light_over_estrus_samples med_width_dark_light_over_estrus_samples
 clear mean_dF_over_all_samples mean_dF_over_estrus_samples mean_dF_by_state mean_rate_over_estrus_samples
 clear median_dF_over_all_samples median_dF_over_estrus_samples median_dF_by_state median_rate_over_estrus_samples
 for idi=1:length(mouse_info)
-    if size(output{idi}.mean_dF_over_estrus_samples,1)<6 % no OVX for this female- add nan arrays to match size 
+    if size(output{idi}.mean_dF_over_estrus_samples,1)<size(estrus_states_titles,2) % no OVX for this female- add nan arrays to match size 
         output{idi}.mean_dF_over_estrus_samples=cat(1, output{idi}.mean_dF_over_estrus_samples(:,:,1:min(L)),nan(1,24,min(L)));
         output{idi}.mean_rate_over_estrus_samples=cat(1,output{idi}.mean_rate_over_estrus_samples,nan(1,24));
         output{idi}.mean_width_over_estrus_samples=cat(1,output{idi}.mean_width_over_estrus_samples,nan(1,24));
@@ -123,8 +144,11 @@ end
 clear med_dF_over_estrus_samples_window med_rate_over_estrus_samples_window med_width_over_estrus_samples_window
 
 CF=0.8/length(mouse_info);% color factor
-full_time_estrus_states_titles={'P-2 D','P-1 L','P-1 D','P+0 L','P+0 D','P+1 L','P+1 D','P+2 L','P+2 D' 'OVX L', 'OVX D'};
-
+if by_estrous
+    full_time_estrus_states_titles={'P D','P L','E D','E L','M D','M L','Di D','Di L','OVX L', 'OVX D'};
+else
+    full_time_estrus_states_titles={'P-2 D','P-1 L','P-1 D','P+0 L','P+0 D','P+1 L','P+1 D','P+2 L','P+2 D' 'OVX L', 'OVX D'};
+end
 % test the results
 figure
 subplot(1,3,1)
@@ -168,8 +192,8 @@ figure; [p,tbl,stats] = kruskalwallis(med_dF_dark_light_over_estrus_samples,[],'
 c_dF= multcompare(stats,'CType','hsd');c_dF(:,end+1)=c_dF(:,6)<0.05;% Tukey's honest significant difference criterion correction
 figure; [p,tbl,stats_r] = kruskalwallis(med_rate_dark_light_over_estrus_samples,[],'off');
 c_r = multcompare(stats_r,'CType','hsd');c_r(:,end+1)=c_r(:,6)<0.05;
-figure; [p,tbl,stats_w] = kruskalwallis(med_width_dark_light_over_estrus_samples,[],'off');
-c_w = multcompare(stats_w,'CType','hsd');c_w(:,end+1)=c_w(:,6)<0.05;
+% figure; [p,tbl,stats_w] = kruskalwallis(med_width_dark_light_over_estrus_samples,[],'off');
+% c_w = multcompare(stats_w,'CType','hsd');c_w(:,end+1)=c_w(:,6)<0.05;
 % plot the median dF and rate over light/dark
 %dF
 % set a new color index for dark- light 
@@ -180,20 +204,30 @@ end
 figure
 subplot(2,1,1)
 for sti=1:length(color_ind2)
-    bh=bar(sti, nanmedian(med_dF_dark_light_over_estrus_samples(:,sti))); hold on;
+    % plot bars
+    tmp=nanmean(med_dF_dark_light_over_estrus_samples(:,sti));
+    bh=bar(sti, tmp); hold on;
     set(bh,'FaceColor', ALL_colors(color_ind2(sti),:))
+    % error bar
+    sem=nanstd(med_dF_dark_light_over_estrus_samples(:,sti))/sqrt(length(med_dF_dark_light_over_estrus_samples(:,sti)));
+    lh=line([sti sti],[tmp+sem tmp-sem]); lh.Color='k'; hold on;
 end
 for idi=1:length(mouse_info) 
     lh1=plot(med_dF_dark_light_over_estrus_samples(idi,:),'-*'); hold on;
     set(lh1,'Color', [CF*idi CF*idi CF*idi])
 end
 xticklabels(full_time_estrus_states_titles)
-ylabel ('median dF')
+ylabel ('mean dF')
+ylim([0 15.5])
 %rates
 subplot(2,1,2)
 for sti=1:length(color_ind2)
-    bh=bar(sti, nanmedian(med_rate_dark_light_over_estrus_samples(:,sti))); hold on;
+    tmp=nanmean(med_rate_dark_light_over_estrus_samples(:,sti));
+    bh=bar(sti,tmp); hold on;
     set(bh,'FaceColor', ALL_colors(color_ind2(sti),:))
+    % error bar
+    sem=nanstd(med_rate_dark_light_over_estrus_samples(:,sti))/sqrt(length(med_rate_dark_light_over_estrus_samples(:,sti)));
+    lh=line([sti sti],[tmp+sem tmp-sem]); lh.Color='k'; hold on;
 end
 %bar(nanmedian(med_rate_dark_light_over_estrus_samples)); hold on;
 for idi=1:length(mouse_info) 
@@ -201,7 +235,8 @@ for idi=1:length(mouse_info)
     set(lh1,'Color', [CF*idi CF*idi CF*idi])
 end
 xticklabels(full_time_estrus_states_titles)
-ylabel ('median rates')
+ylabel ('mean rates')
+ylim([0 0.7])
 %width
 % subplot(3,1,3)
 % bar(median(med_width_dark_light_over_estrus_samples)); hold on;
@@ -211,6 +246,7 @@ ylabel ('median rates')
 % end
 % xticklabels(full_time_estrus_states_titles)
 % ylabel ('median width')
+% prabola fit dF/F
 
 %% plot specific window data
 clear lh1
@@ -366,17 +402,25 @@ figure
 clear tmp
 for sti=1:length(estrus_states_titles)
     subplot(length(estrus_states_titles),1,sti)
+    % plot bar of mean/median
     tmp(:)=nanmean(rate_over_estrus_samples_DL(:,sti,:));
     lh=bar(tmp); hold on
     set(lh,'FaceColor', ALL_colors(color_ind(sti),:))
+   % plot individual points
     for idi=1:length(mouse_info)
-        tmp(:)=rate_over_estrus_samples_DL(idi,sti,:);
-        lh=plot(tmp,'.'); hold on
+        tmp2(:)=rate_over_estrus_samples_DL(idi,sti,:);
+        lh=plot(tmp2,'.'); hold on
         set(lh,'Color', [0 0 0])
+    end
+   % plot error bars
+    for hi=1:size(rate_over_estrus_samples_DL,3)
+        sem=nanstd(rate_over_estrus_samples_DL(:,sti,hi))/sqrt(length(rate_over_estrus_samples_DL(:,sti,hi)));
+        lh2=line([hi hi],[tmp(hi)+sem tmp(hi)-sem]); hold on
+        lh2.Color='k';
     end
     title (estrus_states_titles{sti})
     ylabel('median rates')
-    ylim([0 0.9])
+    ylim([0 1.4])
 end
 legend (estrus_states_titles)
 
@@ -388,14 +432,21 @@ for sti=1:length(estrus_states_titles)
     tmp(:)=nanmedian(width_over_estrus_samples_DL(:,sti,:));
     lh=bar(tmp); hold on
     set(lh,'FaceColor', ALL_colors(color_ind(sti),:))
+    % plot individual point 
     for idi=1:length(mouse_info)
-        tmp(:)=width_over_estrus_samples_DL(idi,sti,:);
-        lh=plot(tmp,'.'); hold on
+        tmp2(:)=width_over_estrus_samples_DL(idi,sti,:);
+        lh=plot(tmp2,'.'); hold on
         set(lh,'Color', [0 0 0])
+    end
+    % plot error bars
+    for hi=1:size(width_over_estrus_samples_DL,3)
+        sem=nanstd(width_over_estrus_samples_DL(:,sti,hi))/sqrt(length(width_over_estrus_samples_DL(:,sti,hi)));
+        lh2=line([hi hi],[tmp(hi)+sem tmp(hi)-sem]); hold on
+        lh2.Color='k';
     end
     title (estrus_states_titles{sti})
     ylabel('median width')
-    ylim([0 9])
+    ylim([0 75])
 end
 
 
@@ -418,12 +469,18 @@ figure
 for sti=1:length(estrus_states_titles)
     subplot(length(estrus_states_titles),1,sti)
     tmp(:)=nanmedian(dF_by_state_DL(:,sti,:));
-    lh=bar(tmp); hold on
-    set(lh,'FaceColor', ALL_colors(color_ind(sti),:))
+    bh=bar(tmp); hold on
+    set(bh,'FaceColor', ALL_colors(color_ind(sti),:))
+    
     for idi=1:length(mouse_info)
-        tmp(:)=dF_by_state_DL(idi,sti,:);
-        lh=plot(tmp,'.'); hold on
+        tmp2(:)=dF_by_state_DL(idi,sti,:);
+        lh=plot(tmp2,'.'); hold on
         set(lh,'Color', [0 0 0])
+    end
+    for hi=1:size(dF_by_state_DL,3)
+        sem=nanstd(dF_by_state_DL(:,sti,hi))/sqrt(length(dF_by_state_DL(:,sti,hi)));
+        lh2=line([hi hi],[tmp(hi)+sem tmp(hi)-sem]); hold on
+        lh2.Color='k';
     end
     ylim([-0.5 15])
    ylabel ('Median dF')
@@ -459,16 +516,58 @@ for pi=1:length(list)
     end
 end
 %%
-
-
+% prabola fit dF/F
+clear beta_dF beta_rate tmp
+zt_fit=[2:11];
+all_data_to_plot={'dF',  'rate'};
 figure
-for idi=1:length(mouse_info)
-    for hi=1:size(output{idi}.mean_dF_over_all_samples,1)
-        plot(output{idi}.mean_dF_over_all_samples(hi,:)+25*hi); hold on
+for di=1:length(all_data_to_plot)
+    clear  ind ind_max
+    switch all_data_to_plot{di}
+        case 'dF'
+            data_to_plot=dF_by_state_DL; 
+        case 'rate'
+            data_to_plot=rate_over_estrus_samples_DL;
     end
-    ylim([-20 (hi+3)*25])
+    subplot(length(all_data_to_plot),1,di)
+    for sti=2:length(estrus_states_titles) % starts with 2 as P-2 doesn't have the full 24h data 
+        %subplot(length(estrus_states_titles),1,sti)
+        clear beta_dF 
+        tmp(:)=nanmean(data_to_plot(:,sti,:));
+        lh=plot(zt_fit,tmp(zt_fit+1),'o'); hold on
+        set(lh,'Color', ALL_colors(color_ind(sti),:))
+        Y=tmp(zt_fit+1)';
+        x=[zt_fit]';
+        A=[ones(length(x),1) x x.^2];
+        beta_dF(sti,:)=A\Y;
+        lh2=plot(x, beta_dF(sti,1)+beta_dF(sti,2)*x+beta_dF(sti,3)*x.^2);
+        
+        set(lh2,'Color', ALL_colors(color_ind(sti),:))
+        % calculate R square
+        SSR=sum((tmp(zt_fit+1)'-(beta_dF(sti,1)+beta_dF(sti,2)*x+beta_dF(sti,3)*x.^2)).^2);
+        SST=sum((tmp(zt_fit+1)'-mean(tmp(zt_fit+1)')).^2);
+        R_sqr(sti-1)=1-SSR/SST;
+        [val(sti-1),ind(sti-1)]=min(beta_dF(sti,1)+beta_dF(sti,2)*x+beta_dF(sti,3)*x.^2); % look for min ZT
+        [val_max(sti-1),ind_max(sti-1)]=max(beta_dF(sti,1)+beta_dF(sti,2)*x+beta_dF(sti,3)*x.^2); % look for min ZT
+        leg_est{sti-1}=sprintf('Estimated (y=%.4f+%.4fx+%.4fx^2',beta_dF(sti,1),beta_dF(sti,2),beta_dF(sti,3));
+        legend('Data',leg_est{sti})
+    end
+    ylabel(['parabolic fit to ' all_data_to_plot{di} ])
+    xlabel('Time (ZT)')
+    xlim([min(zt_fit)-0.5 max(zt_fit)+0.5])
+    disp(['Min parabola ' all_data_to_plot{di}  ' is at ZT ' num2str(mean(ind)) ' +- ' num2str(std(ind)/sqrt(length(ind)))])
+    disp(['Max parabola ' all_data_to_plot{di}  ' is at ZT ' num2str(mean(ind_max(ind_max>mean(ind)))) ' +- ' num2str(std(ind_max(ind_max>mean(ind)))/sqrt(length(ind_max)))])
+     disp(['Parabola Rsqr ' all_data_to_plot{di}  ' is ' num2str(mean(R_sqr)) ' +- ' num2str(std(R_sqr)/sqrt(length(R_sqr)))])
 end
-title('all mice')
+
+% figure
+% for idi=1:length(mouse_info)
+%     for hi=1:size(output{idi}.mean_dF_over_all_samples,1)
+%         plot(output{idi}.mean_dF_over_all_samples(hi,:)+25*hi); hold on
+%     end
+%     ylim([-20 (hi+3)*25])
+% end
+% title('all mice')
 
 
 % plot mean dF per ID

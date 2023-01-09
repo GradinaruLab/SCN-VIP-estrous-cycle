@@ -8,7 +8,7 @@ my_path='D:\DATA_Glab\fiberphotometry\LDtransition\';
 
 % Females. 1-6
 ind=0;
-minimum_trials=2;
+minimum_trials=1;
 % females w/o OVX
 %ind=ind+1; mouse_info{ind}.ID='68RL';mouse_info{ind}.side='L';mouse_info{ind}.load_new_trials=1; mouse_info{ind}.sex='Female';
 ind=ind+1; mouse_info{ind}.ID='93N';mouse_info{ind}.side='R';mouse_info{ind}.load_new_trials=1; mouse_info{ind}.sex='Female';%
@@ -54,32 +54,33 @@ n_females=ind;
 %     mouse_info{i}.analysis_type=analysis_type;
 % end
 
-estrous_states_classes={'P-2','P-1','P+0','P+1','P+2'};
-estrous_states_allclasses=[estrous_states_classes 'OVX' 'OVX+Esr' 'OVX+PR' ];
+estrous_states_classes={'P-1','P+0','P+1'};
+%estrous_states_classes={'P-2','P-1','P+0','P+1','P+2'};
+%estrous_states_allclasses=[estrous_states_classes 'OVX' 'OVX+Esr' 'OVX+PR' ];
 %estrous_states_for_classification={'NR' 'RE' 'Male' 'OVX'};%    
-
+estrous_states_allclasses=[estrous_states_classes 'OVX' ];
 
 [ALL_colors,color_ind]=get_estrus_colors(estrous_states_allclasses);
 
 % get data for each mousetic 
 tic
-
+newF='newF'
 for idi=1:length(mouse_info)
     mouse_info{idi}.minimum_trials=minimum_trials;
     switch mouse_info{idi}.sex
         case 'Female'
-            if ~exist ([my_path 'output_estrous_cycle_' mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])
+            if ~exist ([my_path 'output_estrous_cycle_' newF mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])
                 disp(['get data for ' mouse_info{idi}.ID])
                 output= get_LDtransition_FP_per_mouse (mouse_info{idi});
             else
-                load([my_path 'output_estrous_cycle_' mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])% load 'output'
+                load([my_path 'output_estrous_cycle_' newF mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])% load 'output'
             end
         case {'male','OVX'} % for now no difference bweteen males and females
-            if ~exist ([my_path 'output_male_female_' mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])
+            if ~exist ([my_path 'output_male_female_' newF mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])
                 disp(['get data for ' mouse_info{idi}.ID])
                 output = get_LDtransition_FP_per_mouse (mouse_info{idi});
             else
-                load([my_path 'output_male_female_' mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])%all_output{idi}=output;
+                load([my_path 'output_male_female_' newF mouse_info{idi}.ID '_MT' num2str(mouse_info{idi}.minimum_trials) '.mat' ])%all_output{idi}=output;
             end 
     end
     output.new_estrus_states=estrus_to_receptive(output.estrus_states);
@@ -116,7 +117,7 @@ for si=1:length(si_inds)
     FFT_POWER_INT{si}=this_output.FFT_POWER_INT_by_freq{si_inds(si)};
 end
 % now plot                
-freq_to_plot=[5:9]; % index
+freq_to_plot=[2:size(new_f_limits,1)-1]; % index
 times_to_plot=1:15; % 1-3 is ZT10, 4-9 is ZT11, 10-15 is ZT12
 clims=[0 15]; % colorbar values control 
 included_states=estrous_states_allclasses(index);
@@ -193,9 +194,11 @@ for idi=1:length(all_output)
          if contains(ES{si},estrous_states_allclasses)
              k=k+1;
              s_ind=find(strcmp(ES{si},estrous_states_allclasses));
-             FFT_by_state{idi,s_ind}=[FFT_by_state{idi,s_ind} all_output{idi}.FFT_POWER_INT_by_freq{si}(:,times_to_plot)] ;
-             FFT_by_state_all_ID{k}=this_output.FFT_POWER_INT_by_freq{si}(:,times_to_plot);
-             states{k}=ES{si};
+             if ~isempty(s_ind)
+                 FFT_by_state{idi,s_ind}=[FFT_by_state{idi,s_ind} all_output{idi}.FFT_POWER_INT_by_freq{si}(:,times_to_plot)] ;
+                 FFT_by_state_all_ID{k}=this_output.FFT_POWER_INT_by_freq{si}(:,times_to_plot);
+                 states{k}=ES{si};
+             end
          end
      end
         
@@ -211,9 +214,10 @@ end
 % at the histogram 
 
 time_frame_start=0;    % start is ZT10, but the function is based 
-freq_ind=9;
-hour_ind=[1:3]; %1-3 is ZT10
-states_to_compare={{'P-2','P-1'},{'P+0','P+1'}}; states_names={'NR', 'RE'};
+freq_ind=6;
+hour_ind=[1:9]; %1-3 is ZT10
+%states_to_compare={{'P-2','P-1'},{'P+0','P+1'}}; states_names={'NR', 'RE'};
+states_to_compare={{'P-2','P-1'},{{'P+1'}}}; states_names={'M/D', 'E'};
 %states_to_compare={{'P+1','P+2'},{'OVX'}}; states_names={'RE', 'OVX'};
 %states_to_compare={'OVX+PR','OVX+Esr'}; states_names=states_to_compare
 %states_to_compare={'OVX','Male'}; states_names=states_to_compare
@@ -315,8 +319,8 @@ end
 
 
 % now plot avergaed FFTs by state
-freq_to_plot=[5:9];
-clims=[0 10];
+freq_to_plot=[2:size(new_f_limits,1)-1];
+clims=[0 8];
 figure 
 for si=1:length(FFT_median_by_state)
     subplot(length(FFT_median_by_state),1,si)
@@ -335,10 +339,10 @@ end
 
 %  plot frequencies relationships, per state
 k=0;
-ref_freq=9;
+ref_freq=6;
 hours_array=1:13;
 figure
-for fi=[1 3 4 6 8]
+for fi=[1 3 4 5]
     k=k+1;
     subplot(1,5,k)
     for si=1:2 % non recptive
@@ -365,8 +369,8 @@ if one_condition
     all_inputs.pca_features=1;% choose if pca is used to reduce dimentionality of features
     all_inputs.selected_states=estrous_states_allclasses([6,7]);
    
-     all_inputs.method='Discriminant analysis';
-   % all_inputs.method='Support vector machine'
+   %  all_inputs.method='Discriminant analysis';
+    all_inputs.method='Support vector machine'
     all_inputs.mouse_info=mouse_info;
     all_inputs.plot_figure=0;
     end_table=all_machine_learning_for_FFT(all_inputs,all_output);
@@ -374,12 +378,12 @@ end
 
 % next, can run multiple conditions, comparing 2 states at the time  
 % define input data conditions 
-%class_by_estrous='full' % 'full' or 'semi_full' 'receptive'
+class_by_estrous='full' % 'full' or 'semi_full' 'receptive'
 %class_by_estrous='semi_full' % 'full' or 'semi_full' 'receptive'
-class_by_estrous='receptive' % 'full' or 'semi_full' 'receptive'
+%class_by_estrous='receptive' % 'full' or 'semi_full' 'receptive'
 switch class_by_estrous
     case 'full'; by_estrous=estrous_states_allclasses(1:end) ;
-    case 'semi_full'; by_estrous=estrous_states_allclasses([1:5]) ;
+    case 'semi_full'; by_estrous=estrous_states_allclasses([1:4]) ;
     case 'receptive'; by_estrous={'NR' 'RE' 'OVX' 'OVX+Esr' 'OVX+PR'};
 end
 switch class_by_estrous
@@ -387,57 +391,45 @@ switch class_by_estrous
     case 'semi_full' ; all_inputs.classification_states='estrus_states'; %/ ''
     case 'full' ; all_inputs.classification_states='estrus_states'; %/ ''
 end
-all_inputs.freq_start_interval=5;
-all_inputs.FX=9-all_inputs.freq_start_interval; % additional frequencies range taken into account
-all_inputs.rel_hours=[1:3]; %ZT10-10:30
-%all_inputs.rel_hours=[4:9]; % ZT11-12
-all_inputs.pca_features=0;% choose if pca is used to reduce dimentionality of features
-all_inputs.method='Discriminant analysis';
-%all_inputs.method='Support vector machine'
-all_inputs.plot_figure=0;
-n_iteration=10;
-cd('Z:\Anat\fiberphotometry\FFT_Analysis')
-% check if file exist 
-if exist (['LD_OVX_FP_FFT_classification_corr_' num2str(n_iteration) '_iterations_' class_by_estrous '_' all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', hours ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ' ' all_inputs.classification_states '.mat'])
-    load(['LD_OVX_FP_FFT_classification_corr_' num2str(n_iteration) '_iterations_' class_by_estrous '_' all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', hours ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ' ' all_inputs.classification_states '.mat'])
-else
-    clear LOO_score cr2 cr1 data_to_plot cr2_std
-    for ni=1:n_iteration
-        
-        %LOO_score_legend=[];
-        for sti1=1:length(by_estrous)
-            for sti2=1:length(by_estrous)
-                all_inputs.selected_states=by_estrous([sti1,sti2]);
-                all_inputs.mouse_info=mouse_info;
-                end_table=all_machine_learning_for_FFT(all_inputs,all_output);
-                LOO_score{sti1}(:,sti2)=table2array(end_table(:,2));
-                % LOO_score_legend=[LOO_score_legend end_table.states];
-            end
-        end
-        for sti1=1:length(LOO_score)
-            data_to_plot=LOO_score{sti1}';
-            cr1(ni,sti1,:)=mean(data_to_plot,2);
-        end
-    end
-    cr2(:,:)=nanmean(cr1,1);
-    cr2_std(:,:)=std(cr1,1)/sqrt(n_iteration);
-    disp(['Mean std = ' num2str(mean(nanmean(cr2_std)))])
-    save (['LD_OVX_FP_FFT_classification_corr_' num2str(n_iteration) '_iterations_' class_by_estrous '_' all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', hours ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ' ' all_inputs.classification_states '.mat'],'cr2')
+y
+
+%% check best ZT range to classify
+clear LOO_score end_table cr1 range
+range=[];
+for n=1:13
+    a=[1:3]; range=[range; a+n-1];
 end
-% plot classification map 
-map='gray';
-corr_plot_FFT(cr2/100,by_estrous,map)
-title([all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', time-frames ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ])
-print(['LD_OVX_FP_FFT_classification_corr_' num2str(n_iteration) '_iterations_' all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', hours ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ' ' all_inputs.classification_states],'-depsc')
+%range=[1:9;10:12];
+state_to_compare{1}='P-1';
+state_to_compare{2}='P+1';
+for zti=1:size(range,1)
+    for n_repeats=1:10
+        all_inputs.rel_hours=range(zti,:); %ZT10-10:30
+        %LOO_score_legend=[];
+        sti1=find(strcmp(by_estrous,state_to_compare{1}));
+        sti2=find(strcmp(by_estrous,state_to_compare{2}));
+        all_inputs.selected_states=by_estrous([sti1,sti2]);
+        all_inputs.mouse_info=mouse_info;
+        end_table=all_machine_learning_for_FFT(all_inputs,all_output);
+        LOO_score{zti}=table2array(end_table(:,2));
+        data_to_plot=LOO_score{zti}';
+        cr1(zti,n_repeats)=data_to_plot(:,3);
+    end
+end
 
-my_matvisual(cr2(end:-1:1,:),'annotation',by_estrous)
-title([all_inputs.method ', PCA = ' num2str(all_inputs.pca_features) ', time-frames ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ])
-print(['LD2_OVX_FP_FFT_classification_corr_' all_inputs.method ' ' num2str(n_iteration) '_iterations_' ', PCA = ' num2str(all_inputs.pca_features) ', hours ' num2str(all_inputs.rel_hours(1)) ' to ' num2str(all_inputs.rel_hours(end)) ', Freq ' num2str(all_inputs.freq_start_interval) ' to ' num2str(all_inputs.freq_start_interval+all_inputs.FX) ' ' all_inputs.classification_states],'-depsc')
-
-disp(['Minimal validation score = ' num2str(min(min(cr2)))])
-disp(['Average validation score = ' num2str(mean(mean(cr2)))])
-
-disp(['Average above chance = ' num2str(mean(cr2(find((cr2>55).*(cr2<99))))) ' +- ' num2str(std(cr2(find((cr2>55).*(cr2<99))))/sqrt(length(cr2(find((cr2>55).*(cr2<99))))))])
-disp(['Average bellow chance = ' num2str(mean(cr2(find(cr2<50)))) ' +- ' num2str(std(cr2(find(cr2<50)))/sqrt(length(cr2(find(cr2<50)))))])
+% plot score vs time (zt start)
+figure
+plot(range(:,1),nanmean(cr1,2)); hold on
+for i=1:size(range,1)
+    cr_mean=nanmean(cr1(i,:));
+    cr_sem=nanstd(cr1(i,:))/sqrt(length(cr1(i,:)));
+    lh=line([range(i,1) range(i,1)],[cr_mean+cr_sem cr_mean-cr_sem]);
+    lh.Color='k';
+end
+ylabel('LOOCV score')
+xlabel('ZT start, 30 minutes intervals')
+title ([state_to_compare{1} ' vs. ' state_to_compare{2}])
+        % LOO_score_legend=[LOO_score_legend end_table.states];
+    
 
 1

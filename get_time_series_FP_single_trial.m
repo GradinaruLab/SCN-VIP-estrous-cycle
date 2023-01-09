@@ -9,8 +9,8 @@ clear y data
 if nargin==0
    %mouse_info.ID='198R'; mouse_info.side='R';trial_info.rig='SynTDT';
    % mouse_info.ID='200LL'; mouse_info.side='R';
-    %mouse_info.ID='246RL'; mouse_info.side='R';
- mouse_info.ID='259R'; mouse_info.side='R';trial_info.rig='SynTDT';
+ mouse_info.ID='246RL'; mouse_info.side='R';trial_info.rig='SynTDT';
+% mouse_info.ID='259R'; mouse_info.side='R';trial_info.rig='SynTDT';
    % mouse_info.ID='260L'; mouse_info.side='L';
 %   mouse_info.ID='261RL'; mouse_info.side='R';trial_info.rig='SynTDT';
  %   mouse_info.ID='262R'; mouse_info.side='R'; trial_info.rig='SynTDT';
@@ -18,8 +18,9 @@ if nargin==0
     %   mouse_info.ID='288RL'; mouse_info.side='R';trial_info.rig='SynTDT';% male
      %   mouse_info.ID='313RL'; mouse_info.side='R';trial_info.rig='SynTDT';%female
    
-    trial_info.date='102020';%MMDDYY
-    trial_info.sess_num=6;  trial_info.to_remove=[];
+    %trial_info.date='102020';%MMDDYY
+     trial_info.date='082620';%MMDDYY
+    trial_info.sess_num=1;  trial_info.to_remove=[];
     trial_info.estrus=[];
    
     trial_info.show=1;
@@ -30,7 +31,7 @@ else
     plot_fft=0;
     trial_info.show=0;
 end
-do_ACF=0;% autocorr
+
 
 rig=trial_info.rig;
 
@@ -176,10 +177,10 @@ B1 = smoothdata(P1,1,'gaussian',GW);
 % find the mean frequencies of the obsereved peaks
 %GW=[12 180 180];% the first window fits low freq, up to 0.03Hz. the second fits the 0.5 to 2 Hz
 %f_limits=[0 0.03 ;0.5 1.1; 1.2 1.8];% define the interval for freq max identification to be avergaed
-f_limits=[0 0.03 ;0.03 0.5; 0.5 1.6];% define the interval for freq max identification to be avergaed
+f_limits=[0.0033 0.03 ;0.03 0.5; 0.5 1.6];% define the interval for freq max identification to be avergaed. minimum is half of 10 minutes (longer can't be detected) 
 %f_limits=[0 0.03 ;0.5 1.6];%HZ define the interval for freq max identification to be avergaed
 %f_limits=[0 0.03 ;0.03 0.2];%HZ define the interval for freq max identification to be avergaed
-
+f_limits=[0.0033 0.007 ;0.007 0.05; 0.05 0.1; 0.1 0.25; 0.25 0.45; 0.45 1; 1.0 1.35];
 
 for wi=1:size(f_limits,1)
     for di=1:size(B1,2)
@@ -225,7 +226,14 @@ if plot_fft
         plot(log10(f),log10(B1(:,di)),'k') ; hold on;
     end 
     f_limits(f_limits==0)=0.0001;
-    line(log10(f_limits)',[0 0; -1 -1; -2 -2]')
+    if size(f_limits,1)==3
+        line(log10(f_limits)',[0 0; -1 -1; -2 -2 ]')
+    elseif size(f_limits,1)==5
+        line(log10(f_limits)',[0 0; -0.5 -0.5; -1 -1; -1.5 -1.5; -2 -2 ]')
+    elseif size(f_limits,1)==7
+        line(log10(f_limits)',[0 0; -0.25 -0.25; -0.5 -0.5; -0.75 -0.75; -1 -1; -1.5 -1.5; -2 -2 ]')
+
+    end
     xlim([-2.75 1.5])
     % ylim([0 10])
     xlabel('log freq (Hz)'); ylabel('log |P1(f)|')
@@ -241,12 +249,14 @@ if plot_fft
         for wi=1:size(f_limits,1)
             %   subplot(size(f_limits,1),1,wi)
             ph=plot(B1_int(wi,:)/max(B1_int(wi,:))); hold on;
-            switch wi
-                case 1; ph.Color=ALL_colors(color_ind,:);
-                case 2; ph.Color=ALL_colors(color_ind+1,:);
-            end
+            %             switch wi
+            %                 case 1; ph.Color=ALL_colors(color_ind,:);
+            %                 case 2; ph.Color=ALL_colors(color_ind+1,:);
+            %             end
+            ph.Color=[0.08*wi 0.08*wi 0.08*wi];
         end
-        ylim([0 XMAX]); ylabel('Normalized integrated Power (a.u.)'); 
+        legend(num2str(f_limits))
+         ylim([0 XMAX]); ylabel('Normalized integrated Power (a.u.)'); 
     else
         ph1=plot([1:24],B1_int(1,:)/max(B1_int(1,:)));hold on;
         ph1.Color=ALL_colors(color_ind,:);
@@ -266,28 +276,6 @@ if plot_fft
 end
  % done fft 
  
- %% autocorrelation - to find dominant frequencies
- if do_ACF
- for hi=1:24
-     t2=t(hi,30*fs:end);
-     y=double(dF(hi,30*fs:end)');
-     y2=medfilt1(y,100);
-     if ~(sum(isnan(y2))==length(y2))
-         figure
-         title(['VIPGC' mouse_info.ID ' ' trial_info.date ' sess ' num2str(trial_info.sess_num) ' ' trial_info.estrus ' hour=' num2str(hi)]);
-         subplot(2,1,1)
-         plot(t2,y,t2,y2); hold on
-         subplot(2,1,2)
-         
-        % autocorr(y2,'NumLags',40,'NumSTD',2)
-         parcorr(y2,'NumLags',10,'NumSTD',2)
-     end
- end
- %02/15/22 produce mainly h=0,1,2 above threshold- does it make sense? 
- end
- % done with autocorr
-%%
-
 analysis.med_width=width;
 analysis.med_amplitude=height;
 analysis.rate=rate;

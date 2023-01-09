@@ -6,16 +6,17 @@ function [output] = get_time_series_FP_per_mouse (mouse_info);
 close all
 if nargin==0
     
-    % mouse_info.ID='198R';mouse_info.side='R';OVX=0;% female
-   % mouse_info.ID='200LL';mouse_info.side='R';OVX=0;%% female
-   % mouse_info.ID='246RL';mouse_info.side='R';OVX=1;%% female
-    % mouse_info.ID='247RRL';mouse_info.side='L';OVX=1;%% female
-   mouse_info.ID='259R'; mouse_info.side='R'; OVX=1;% female
+  %  mouse_info.ID='198R';mouse_info.side='R';OVX=0;% female
+ % mouse_info.ID='200LL';mouse_info.side='R';OVX=0;%% female
+  mouse_info.ID='246RL';mouse_info.side='R';OVX=1;%% female
+  %mouse_info.ID='247RRL';mouse_info.side='L';OVX=1;%% female % 
+ %mouse_info.ID='259R'; mouse_info.side='R'; OVX=1;% female
+ % mouse_info.ID='260L'; mouse_info.side='L';% OVX=1;%female
    %mouse_info.ID='261RL'; mouse_info.side='R';% OVX=1;%female
-    % mouse_info.ID='313RL'; mouse_info.side='R'; OVX=1;% female
+  %   mouse_info.ID='313RL'; mouse_info.side='R'; OVX=1;% female
+     mouse_info.analysis_type='estrous_cycle';
     
-    
-    % mouse_info.ID='247RRL_OVX';mouse_info.side='L';% OVX
+ %    mouse_info.ID='247RRL_OVX';mouse_info.side='L';% OVX
     % mouse_info.ID='246RL_OVX'; mouse_info.side='R';% OVX
     % mouse_info.ID='261RL_OVX'; mouse_info.side='R';% OVX
     %  mouse_info.ID='259R_OVX'; mouse_info.side='R'; % OVX
@@ -26,12 +27,13 @@ if nargin==0
     % mouse_info.ID='287L'; mouse_info.side='R';% male to exlude?
     % mouse_info.ID='288RL'; mouse_info.side='R';OVX=0;% male
     % mouse_info.ID='296R'; mouse_info.side='R';% male
-    
+    % mouse_info.analysis_type='male_female';
     
     
     mouse_info.load_new_trials=1;
-    %  mouse_info.analysis_type='male_female';
-    mouse_info.analysis_type='estrous_cycle';
+   % mouse_info.analysis_type='male_female';
+ 
+    % mouse_info.analysis_type='estrous_cycle2';
     trial_info.show=1;% show each 24h trial
     show_fft=1;
 else
@@ -41,6 +43,8 @@ else
       switch mouse_info.sex
           case 'Female'
               mouse_info.analysis_type='estrous_cycle';
+          case 'Female2'
+               mouse_info.analysis_type='estrous_cycle2';
           case {'OVX','Male'}
               mouse_info.analysis_type='male_female';
       end
@@ -58,7 +62,7 @@ my_path='D:\DATA_Glab\fiberphotometry\';
 switch mouse_info.analysis_type
     case 'male_female'
         [NUM,TXT]=xlsread([my_path 'FP_VIP_GC_male_female2.xlsx']);
-    case 'estrous_cycle'
+    case {'estrous_cycle','estrous_cycle2'}
         [NUM,TXT]=xlsread([my_path 'FP_VIP_GC4.xlsx']);
 end
 %% load analysis parameters
@@ -95,7 +99,10 @@ switch mouse_info.analysis_type
     case 'male_female'
         this_filename=[my_path '\TDT_TimeSeries\' mouse_info.ID '_dF_male_female.mat'];
     case 'estrous_cycle'
-        this_filename=[my_path '\TDT_TimeSeries\' mouse_info.ID '_dF_estrous.mat'];
+        this_filename=[my_path 'TDT_TimeSeries\' mouse_info.ID '_dF_estrous.mat'];
+    case 'estrous_cycle2'
+        this_filename=[my_path 'TDT_TimeSeries\' mouse_info.ID '_dF_estrous2.mat'];
+        All_estrus_states=All_estrus_states2;
 end
 
 % switch mouse_info.ID
@@ -166,6 +173,11 @@ switch mouse_info.analysis_type
         if ~OVX
             estrus_states_titles=estrus_states_titles(1:5);
         end
+    case 'estrous_cycle2'
+        estrus_states_titles={'P','E','M','D','OVX'};
+        if ~OVX
+            estrus_states_titles=estrus_states_titles(1:4);
+        end
 end
 [ALL_colors,color_ind]=get_estrus_colors(estrus_states_titles);
 [G,ID]=findgroups(estrus_states);% the order is shown in ID
@@ -181,22 +193,29 @@ end
 
 % after fft was included in the analysis ;Feb 2022
 if FFT_cc
-     new_f_limits=[0 0.03; 0.03 0.1; 0.1 0.35; 0.35 0.65; 0.65 1.0; 1.0 1.35 ; 1.35 1.65; 1.65 2.3; 2.3 4];
+    % the minimum frequency to sum on is 0.0033Hz, which is 5 minutes
+    % (1/5*60), which is half cycle in 10 minutes
+     newf='_newF';
+    %newf=[];
+    switch newf
+        case isempty(newf)
+            new_f_limits=[0.0033 0.03; 0.03 0.1; 0.1 0.35; 0.35 0.65; 0.65 1.0; 1.0 1.35 ; 1.35 1.65; 1.65 2.3; 2.3 4];
+        case '_newF'
+            new_f_limits=[0.0033 0.007; 0.007 0.05; 0.05 0.1; 0.1 0.25; 0.25 0.45; 0.45 1.0; 1.0 1.35];
+    end
      new_f_limits=flip(new_f_limits,1);
-            
+     %  f_limits=[0.0033 0.007 ;0.007 0.05; 0.05 0.25; 0.25 0.45; 0.45 2];     
 %     switch mouse_info.analysis_type
 %         case 'estrous_cycle'
-            all_fft_freq_range_array1=[];
-            all_fft_freq_range_array2=[];
-            all_fft_freq_range_array3=[];
-            for i=1:length(analysis) % all sessions
-                f_limits=analysis{i}.int_fft_limits;
-                all_fft_freq_range_1(i,:)=analysis{i}.int_fft(1,:);% 0 to 0.03 Hz lower frequencies
-                all_fft_freq_range_2(i,:)=analysis{i}.int_fft(2,:);%  frequencies
-                all_fft_freq_range_3(i,:)=analysis{i}.int_fft(3,:);% frequencies
-                all_fft_freq_range_array1=[all_fft_freq_range_array1 analysis{i}.int_fft(1,:)];
-                all_fft_freq_range_array2=[all_fft_freq_range_array2 analysis{i}.int_fft(2,:)];
-                all_fft_freq_range_array3=[all_fft_freq_range_array3 analysis{i}.int_fft(3,:)];
+            for fi=1:size(new_f_limits,1)
+                eval(['all_fft_freq_range_array' num2str(fi) '=[];']);
+            end
+            for fi=1:size(new_f_limits,1)
+                for i=1:length(analysis) % all sessions
+                    f_limits=analysis{i}.int_fft_limits;
+                    eval(['all_fft_freq_range_' num2str(fi) '(i,:)=analysis{i}.int_fft(' num2str(fi) ',:);']); % 0 to 0.03 Hz lower frequencies
+                    eval(['all_fft_freq_range_array' num2str(fi) '=[all_fft_freq_range_array' num2str(fi) ' analysis{i}.int_fft(' num2str(fi) ',:)];']);
+                end
             end
             
             %plot freqyency dependancy 
@@ -209,7 +228,8 @@ if FFT_cc
 %                         this_estrus{1}=estrus_states{i};
 %                     end
 %                 end
-%                 
+%                
+                
                 figure
                 %plot(nanmedian(all_fft_freq_range_1,1),nanmedian(all_fft_freq_range_2,1),'-*'); hold on
                 % plot(nanmedian(all_fft_freq_range_1,1),nanmedian(all_fft_freq_range_3,1),'-*'); hold on           %             plot(nanmedian(all_fft_freq_range_3,1),nanmedian(all_fft_freq_range_2,1),'-*'); hold on
@@ -226,7 +246,7 @@ if FFT_cc
             % plot the power fft
             % first define the legend 
                switch mouse_info.analysis_type
-                   case 'estrous_cycle'
+                   case {'estrous_cycle', 'estrous_cycle2'}
                        ES=unique(estrus_states);ES=ES(~cellfun('isempty', ES));% remove OVX if doesn't exist 
                        for esi=1:length(ES)
                            if ~isempty(find(strcmp(estrus_states,estrus_states_titles{esi})))
@@ -270,11 +290,20 @@ if FFT_cc
             % calcualte Time (time intervals)correlation and plot it
             ac_estrus_inds=[];
             ac_OVX_inds=[];
-            ac_estrus_inds=find(strcmp(estrus_states,'P+0'));
+             estrus_inds=[];
+            switch mouse_info.analysis_type
+                case 'estrous_cycle'
+                    ac_estrus_inds=find(strcmp(estrus_states,'P+0'));
+                    % find the indexes of full estrous cycle
+                    estrus_inds(:,1)=find(strcmp(estrus_states,'P-2'));
+                    estrus_inds(:,2)=estrus_inds(:,1)+3;
+                case 'estrous_cycle2'
+                    ac_estrus_inds=find(strcmp(estrus_states,'P'));
+                    % find the indexes of full estrous cycle
+                    estrus_inds(:,1)=find(strcmp(estrus_states,'P'))-2;
+                    estrus_inds(:,2)=estrus_inds(:,1)+4;
+            end
             ac_OVX_inds=find(strcmp(estrus_states,'OVX'));
-            % find the indexes of full estrous cycle
-            estrus_inds(:,1)=find(strcmp(estrus_states,'P-2'));
-            estrus_inds(:,2)=estrus_inds(:,1)+3;
             if ~isempty(find(strcmp(estrus_states,'OVX')))
                 ovxi=find(strcmp(estrus_states,'OVX'));
                 estrus_inds=[estrus_inds; [ovxi(1) ovxi(end)]];
@@ -282,7 +311,11 @@ if FFT_cc
             
             
             if show_fft
-                data_str_to_plot= {'all_fft_freq_range_array1' 'all_fft_freq_range_array2' 'all_fft_freq_range_array3'};
+               % data_str_to_plot= {'all_fft_freq_range_array1' 'all_fft_freq_range_array2' 'all_fft_freq_range_array3'};
+               for fi=1:size(new_f_limits,1)
+                   data_str_to_plot{fi}= ['all_fft_freq_range_array' num2str(fi)];
+               end
+                    
                 figure
                 for pi=1:length(data_str_to_plot)
                     eval(['data_to_plot=' data_str_to_plot{pi} ';']);
@@ -300,12 +333,12 @@ if FFT_cc
                     for ni=1:length(numbers); num_str{ni}=num2str(numbers(ni),'%0.1f');end
                     set(bh,'XTickLabel',num_str)
                     xlabel('Lag (Days)') % switched to days
-                    title([mouse_info.ID  ' ' num2str(f_limits(pi,:)) ' Hz fft'])
+                    title([mouse_info.ID  ' ' num2str(new_f_limits(pi,:)) ' Hz fft'])
                     xlim([0 30*24])
                     ylim([-0.6 0.6])
-                    
-                    xlim([0 8*24])
-                    ylim([-0.1 0.1])
+%                     
+%                     xlim([0 8*24])
+%                     ylim([-0.1 0.1])
                 end
                
                 numbers=(get(bh, 'XTick')/24);
@@ -340,18 +373,20 @@ if FFT_cc
             
             if show_fft
                 % plot the fft power integrals
+                freq_inds=find(new_f_limits(:,2)<=1.35);
                 clims=[0 60];
                 figure
-                L=length(tmp_FFT) ;
-                L=10;
-                for i=1:L% all sessions
-                    subplot(5,ceil(L/5),i)
+                L=length(tmp_FFT) ;St=1; k=0;
+               % L=10; St=10; k=0;
+                for i=St:St+L-1% all sessions
+                    k=k+1;
+                    subplot(5,ceil(L/5),k)
                     %image( FFT_POWER_INT_by_freq{i},'CDataMapping','scaled')
-                    imagesc(tmp_FFT{i},clims)
+                    imagesc(tmp_FFT{i}(freq_inds,:),clims)
                     colorbar
                     title([mouse_info.ID '  ' estrus_states{i} ])
                     yticks([1: size(tmp_FFT{i},1)])
-                    yticklabels(num2str(new_f_limits))
+                    yticklabels(num2str(new_f_limits(freq_inds,:)))
                     xlabel('Time (hours)')
                     ylabel('Int. Power fft')
                 end
@@ -371,19 +406,23 @@ median_dF_over_hour(:,:)=nanmedian(dF1,3);
 if trial_info.show
     figure
     subplot(2,1,1)
+    title (mouse_info.ID)
     for hi=1:size(mean_dF_over_all_samples,1)
         %plot(mean_dF_over_all_samples(hi,:)+hi*10); hold on
       %  plot(mean_dF_over_all_samples(hi,:)); hold on
        plot(median_dF_over_all_samples(hi,:)); hold on
     end
+    ylabel('all dF over hours')
     subplot(2,1,2)
-    
+     
     %    plot([1:24],mean_dF_over_hour'); hold on
     plot([1:24],median_dF_over_hour'); hold on
+    ylabel('median dF over hours')
+    xlabel (mouse_info.ID)
 end
 
 switch mouse_info.analysis_type
-    case 'estrous_cycle'
+    case {'estrous_cycle','estrous_cycle2'}
     for sti=1:length(estrus_states_ind)
         mean_dF_over_estrus_samples(sti,:,:)=nanmean(dF1(estrus_states_ind{sti},:,:),1);
         median_dF_over_estrus_samples(sti,:,:)=nanmedian(dF1(estrus_states_ind{sti},:,:),1);
@@ -440,7 +479,7 @@ end
   
 
 switch mouse_info.analysis_type
-    case 'estrous_cycle'
+    case {'estrous_cycle' , 'estrous_cycle2'}
         for sti=1:length(estrus_states_ind)
             mean_dF_by_state(sti,:)=nanmean(mean_dF_over_hour(estrus_states_ind{sti},:),1);
             median_dF_by_state(sti,:)=nanmedian(mean_dF_over_hour(estrus_states_ind{sti},:),1);
@@ -462,24 +501,32 @@ switch mouse_info.analysis_type
         full_time_estrus_states_titles={'Female D','Female L','OVX D','OVX L','Male D','Male L'};
     case 'estrous_cycle'
         full_time_estrus_states_titles={'P-2 D','P-1 L','P-1 D','P+0 L','P+0 D','P+1 L','P+1 D','P+2 L','P+2 D','OVX D','OVX L'};
+     case 'estrous_cycle2'
+        full_time_estrus_states_titles={'P D','P L','E D','E L','M D','M L','Di D','Di L','OVX D','OVX L'};
+
 end
 
 %% gets the value of each parameter for the total dark or light phase 
 % 05/12/22- change to take median instead of mean 
-clear tmp tmp2
-%tmp=mean_dF_by_state;%  estrus, hour
-tmp=median_dF_by_state;%  estrus, hour
+% 11/20/22- change to mean 
+clear tmp tmp2 tmp3
+tmp=mean_dF_by_state;%  estrus, hour
+%tmp=median_dF_by_state;%  estrus, hour
 full_time_dF=reshape(tmp',1,size(tmp,1)*size(tmp,2));
-%tmp2=mean_rate_over_estrus_samples;%  estrus, hour
-tmp2=median_rate_over_estrus_samples;%  
+tmp2=mean_rate_over_estrus_samples;%  estrus, hour
+%tmp2=median_rate_over_estrus_samples;%  
 full_time_rate=reshape(tmp2',1,size(tmp2,1)*size(tmp2,2));
-%tmp3=mean_width_over_estrus_samples;%  estrus, hour
-tmp3=median_width_over_estrus_samples;%  estrus, hour
+tmp3=mean_width_over_estrus_samples;%  estrus, hour
+%tmp3=median_width_over_estrus_samples;%  estrus, hour
 full_time_width=reshape(tmp3',1,size(tmp3,1)*size(tmp3,2));
 
 clear dF_dark_light rate_dark_light width_dark_light
+dF_dark_light=[];
+rate_dark_light=[];
+width_dark_light=[];
+
 switch mouse_info.analysis_type
-    case 'male_female'
+    case {'male_female' }
         light_off=[5:17];
         light_on=[1:4,18:24];
         
@@ -487,28 +534,52 @@ switch mouse_info.analysis_type
         rate_dark_light=[nanmedian(full_time_rate(light_off)) nanmedian(full_time_rate(light_on))];
         width_dark_light=[nanmedian(full_time_width(light_off)) nanmedian(full_time_width(light_on))];
         
-    case 'estrous_cycle'
+    case {'estrous_cycle','estrous_cycle2'}
         % for estous cycle 
-        ind_end=20*length(full_time_dF)/24;% should give 100 for females with no OVX (5 states), 120 to females with OVX (6 states) 
-        light_off=24+[5:24:ind_end];
-        light_on=24+[5+12:24:ind_end];
-        light_switch=sort([light_off, light_on]);
-        for ti=1:length(light_switch)-1% start with dark
-            dF_dark_light(ti)=nanmedian(full_time_dF(light_switch(ti):light_switch(ti+1)));
-            rate_dark_light(ti)=nanmedian(full_time_rate(light_switch(ti):light_switch(ti+1)));
-            width_dark_light(ti)=nanmedian(full_time_width(light_switch(ti):light_switch(ti+1)));
+        switch mouse_info.analysis_type
+            case 'estrous_cycle'
+                if OVX; L2=5+24; else L2=5; end% remove the first 5 hours, but also the last 24 hours, if OVX is included
+                ind_end=length(full_time_dF)-L2;%
+                light_off=[5:24:ind_end];% first 4 hours are light
+                light_on=[5+12:24:ind_end];
+                %light_off=24+[5:24:ind_end];% first 4 hours are light
+                %light_on=24+[5+12:24:ind_end];
+                light_switch=sort([light_off, light_on]);
+                
+                for ti=1:length(light_switch)-1% start with dark
+                    dF_dark_light(ti)=nanmedian(full_time_dF(light_switch(ti):light_switch(ti+1)));
+                    rate_dark_light(ti)=nanmedian(full_time_rate(light_switch(ti):light_switch(ti+1)));
+                    width_dark_light(ti)=nanmedian(full_time_width(light_switch(ti):light_switch(ti+1)));
+                end
+            case 'estrous_cycle2'
+                ind_end=length(full_time_dF)-5-24;% 
+                light_off=[5:24:ind_end];% first 4 hours are light
+                light_on=[5+12:24:ind_end];
+                 for ti=1:length(light_off) % shift each trial 
+                    light_off_ind=[light_off(ti):light_on(ti)];
+                    light_on_ind=[light_off(ti)-4:light_off(ti)-1,light_on(ti)+1:light_on(ti)+7];
+                    dF_dark_light=[dF_dark_light nanmedian(full_time_dF(light_off_ind)) nanmedian(full_time_dF(light_on_ind))];
+                    rate_dark_light=[rate_dark_light nanmedian(full_time_rate(light_off_ind)) nanmedian(full_time_rate(light_on_ind))];
+                    width_dark_light=[width_dark_light nanmedian(full_time_width(light_off_ind)) nanmedian(full_time_width(light_on_ind))];
+                 end
+
         end
+
         % for OVX- the first 24 indexes comes from OVX 
-        OVX_light_off=[5:17];
-        OVX_light_on=[1:4,18:24];
-        
-        OVX_dF_dark_light=[nanmedian(full_time_dF(OVX_light_off)) nanmedian(full_time_dF(OVX_light_on))];
-        OVX_rate_dark_light=[nanmedian(full_time_rate(OVX_light_off)) nanmedian(full_time_rate(OVX_light_on))];
-        OVX_width_dark_light=[nanmedian(full_time_width(OVX_light_off)) nanmedian(full_time_width(OVX_light_on))];
-        
-        dF_dark_light=[OVX_dF_dark_light dF_dark_light];
-        rate_dark_light=[OVX_rate_dark_light rate_dark_light];
-        width_dark_light=[OVX_width_dark_light width_dark_light];
+        if OVX
+            L_OVX=length(full_time_dF);
+            OVX_light_off=L_OVX-24+[5:16];
+            OVX_light_on=L_OVX-24+[1:4,17:24];
+            
+            OVX_dF_dark_light=[ nanmedian(full_time_dF(OVX_light_on)) nanmedian(full_time_dF(OVX_light_off))];
+            OVX_rate_dark_light=[ nanmedian(full_time_rate(OVX_light_on)) nanmedian(full_time_rate(OVX_light_off))];
+            OVX_width_dark_light=[ nanmedian(full_time_width(OVX_light_on)) nanmedian(full_time_width(OVX_light_off))];
+            
+            dF_dark_light=[ dF_dark_light OVX_dF_dark_light];
+            rate_dark_light=[ rate_dark_light OVX_rate_dark_light];
+            width_dark_light=[ width_dark_light OVX_width_dark_light];
+
+        end
 end
 
 
@@ -539,7 +610,7 @@ switch mouse_info.analysis_type
         ylim([-20 (hi+3)*step])
         title(['VIPGC' mouse_info.ID ' ' estrus_states_titles{1}])
         ylabel('dF')
-    case 'estrous_cycle'
+    case {'estrous_cycle' ,'estrous_cycle2'}
     figure
     estrus_states_ind=estrus_states_ind(~cellfun('isempty',estrus_states_ind));
     for sti=1:length(estrus_states_ind)
@@ -594,7 +665,7 @@ switch mouse_info.analysis_type
         ylabel('width')
         title(['VIPGC' mouse_info.ID ])
         
-    case 'estrous_cycle'
+    case {'estrous_cycle','estrous_cycle2'}
         figure
         subplot(1,3,1)
         for sti=1:length(estrus_states_ind)
@@ -661,10 +732,16 @@ output.new_f_limits=new_f_limits;
 
 switch mouse_info.analysis_type
     case 'male_female'
-        save([my_path 'time_series_output_male_female_' mouse_info.ID], 'output')
+        save([my_path 'time_series_output' newf '_male_female_' mouse_info.ID], 'output')
+         save([my_path 'time_series_output' newf '_general_' mouse_info.ID], 'output')
     case 'estrous_cycle'
-        save([my_path 'time_series_output_estrous_cycle_' mouse_info.ID], 'output')
-       
+        save([my_path 'time_series_output' newf '_estrous_cycle_' mouse_info.ID], 'output')
+         save([my_path 'time_series_output' newf '_general_' mouse_info.ID], 'output')
+      case 'estrous_cycle2'
+        save([my_path 'time_series_output' newf '_estrous_cycle2_' mouse_info.ID], 'output')    
+         save([my_path 'time_series_output' newf '_general2_' mouse_info.ID], 'output')
 end
- save([my_path 'time_series_output_general_' mouse_info.ID], 'output')
+
+save([my_path 'mean_outputs\time_series_output' newf '_general_' mouse_info.ID], 'output')
+
  disp (['done ' mouse_info.ID])

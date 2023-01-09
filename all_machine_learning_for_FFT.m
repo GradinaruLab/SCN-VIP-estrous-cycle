@@ -20,12 +20,17 @@ for esi=1:numel(selected_states)
     selected_states_title=[selected_states_title  ' ' selected_states{esi}];
 end
  
-for ffi=freq_start_interval
+for ffi=freq_start_interval % loop is actually not needed
     clear training_set sex estrous_state ID score true_positive_per
     rel_freq=ffi:ffi+FX;% choose just the first FX+1 frequencies integrals ranges
+    disp(['Freq index from '  num2str(ffi) ' to ' num2str(ffi+FX)])
     t_table=table();
     m=0;
-    for ti=1:numel(all_output)
+    full_data_set_size=numel(all_output);
+    shuffledArray = randperm(full_data_set_size);
+    for ki=1:numel(all_output)%-1 % remove one animal each time to check results stability
+        %ti=shuffledArray(ki);
+        ti=ki;
         output=all_output{ti};
         %     train_set_inds=[1: numel(all_output)];
         %     train_set_inds=train_set_inds(train_set_inds~=test_ind);
@@ -55,7 +60,7 @@ for ffi=freq_start_interval
         if sum(sum(isnan(training_set{ti})))<numel(training_set{ti})
             good_ind=[good_ind ti];
         else
-            disp('all NaN set was removed')
+            disp('all-NaN set was removed')
         end
     end
     t_table=t_table(good_ind,:);
@@ -78,6 +83,12 @@ for ffi=freq_start_interval
         % therefore randomaly remove extra sessions
         [training_set, estrous_state]=remove_states_for_classification(training_set,estrous_state);
  
+        
+        % check that arrays size are correct 
+      %  disp([num2str(sum(strcmp(estrous_state,all_inputs.selected_states{1}))) ' ' all_inputs.selected_states{1} ', ' ... 
+       %  num2str(sum(strcmp(estrous_state,all_inputs.selected_states{2}))) ' ' all_inputs.selected_states{2}])
+        if sum(strcmp(estrous_state,all_inputs.selected_states{1}))-sum(strcmp(estrous_state,all_inputs.selected_states{2}))~=0; disp ('Check classifier array size in ''all_machine_learning_for_FFT'''); end
+        
         params.pca_features=pca_features;% choose if pca is used to reduce dimentionality of features
         params.method=method;
        %params.states=t_table.estrous_state(temp(temp~=m));
@@ -93,35 +104,49 @@ for ffi=freq_start_interval
     
     t_table.score=mylabels'; 
     
-    end_table.states=selected_states';
-    nan_ind=find(strcmp(mylabels,'nan'));
+    end_table.states=[selected_states'; 'all'];
+    
+    % a check point- making sure the matrix is not nan due to missing data 
+    nan_ind=find(strcmp(mylabels,'nan')); 
     disp(['Total '  num2str(length(nan_ind)) ' all nans'])
     non_nan_ind=find(~strcmp(mylabels,'nan'));
+    original_size=size(t_table,1);
     t_table=t_table(non_nan_ind,:);
+    new_size=size(t_table,1);
+    disp(['Original table size is  ' num2str(original_size) ' , new size is ' num2str(new_size)])
     
     for si=1:numel(end_table.states)    
-        true_positive=(strcmp(t_table.estrous_state,end_table.states{si})).*(strcmp(t_table.score,end_table.states{si}));
-        true_positive_per(si)=100*sum(true_positive)/sum(strcmp(t_table.score,end_table.states{si}));
+        true_positive(si,:)=(strcmp(t_table.estrous_state,end_table.states{si})).*(strcmp(t_table.score,end_table.states{si}));
+        true_positive_per(si)=100*sum(true_positive(si,:))/sum(strcmp(t_table.score,end_table.states{si}));
+        % a check point- check the classifier was it results nan 
+        if sum(strcmp(t_table.score,end_table.states{si}))==0
+            disp(['For states ' end_table.states{1} ' and ' end_table.states{2} ' no matching was found- did very poor!!'])
+        end
     end
+    % true positive out of both states
+    true_positive_per(numel(end_table.states))=100*sum(sum(true_positive))/size(true_positive,2);
+    % put all in one table 
     eval(['end_table.true_positive_per' num2str(ffi) '=true_positive_per'' ;'])
+    eval(['end_table.true_positive_per' num2str(ffi) '=true_positive_per'' ;'])
+    
 end
 disp(end_table)
 
 if plot_figure
-figure
-for ffi=freq_start_interval
-    eval(['plot(ffi*ones(1,size(end_table,1)),end_table.true_positive_per' num2str(ffi) ',''*'')'])
-    hold on
-end
-for ffi=freq_start_interval
-    My_xticklabels=[freq_start_interval; freq_start_interval+4];
-end
-xlim([freq_start_interval(1)-0.5 freq_start_interval(end)+0.5])
-xlabel('Frequencies intervals')
-ylabel('State classification test - true positive scores')
-set(gca,'XTick',freq_start_interval)
-set(gca,'XTickLabel',num2str(My_xticklabels'))
-ylim([15,102])
-
-title([params.method ', PCA = ' num2str(pca_features) ', ' selected_states_title ',hours ' num2str(rel_hours(1)) ' to ' num2str(rel_hours(end)) ])
+    figure
+    for ffi=freq_start_interval
+        eval(['plot(ffi*ones(1,size(end_table,1)),end_table.true_positive_per' num2str(ffi) ',''*'')'])
+        hold on
+    end
+    for ffi=freq_start_interval
+        My_xticklabels=[freq_start_interval; freq_start_interval+4];
+    end
+    xlim([freq_start_interval(1)-0.5 freq_start_interval(end)+0.5])
+    xlabel('Frequencies intervals')
+    ylabel('State classification test - true positive scores')
+    set(gca,'XTick',freq_start_interval)
+    set(gca,'XTickLabel',num2str(My_xticklabels'))
+    ylim([15,102])
+    
+    title([params.method ', PCA = ' num2str(pca_features) ', ' selected_states_title ',hours ' num2str(rel_hours(1)) ' to ' num2str(rel_hours(end)) ])
 end
