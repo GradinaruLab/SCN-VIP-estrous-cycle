@@ -1,7 +1,7 @@
 # SCN-VIP-estrous-cycle
 Anat Kahan, Aug 2022 
 
-Estrous cycle regulation experiments: (Figure 1, 2, 6, S6) 
+Estrous cycle regulation experiments: 
 
 [y]=read_estrus_log_table
 read .xlsx file with estrous states and creates output y
@@ -11,13 +11,13 @@ read y and analyze estrous-cycle parameters and plot it
 
 
 
-Virus transduction and efficiency (Figure 2)
+Virus transduction and efficiency for GnRH-Cas9 experiment 
 
 GnRHcas9_KO.m
 read .xlsx file with data collected with Imaris 'spot' function 
 
 
-FP 24/7 10 minutes per hour (Figure 3)
+FP 24/7 10 minutes per hour
 get_time_series_FP_single_trial;
 get data of one trail and calculates dF/F
 get_time_series_FP_per_mouse;
@@ -26,11 +26,11 @@ analyse dataset of one mouse
 get_time_series_FP
 read the whole dataset 
 
-FP 24/7 FFT cross-validation classification (Figure 4, S4) 
+FP 24/7 FFT cross-validation classification
 FP_FFT_output_for_classifier ; 
 run classification after 
 
-FP ZT10-13 (Figure 5, S5)
+FP ZT10-13
 get_LDtransition_FP_single_trial_v2;
 read data per trial
 get_LDtransition_FP_per_mouse;
@@ -46,7 +46,7 @@ FP_LDtransition_FFT_output_for_classifier ;
 used to run classification after "get_LDtransition_FP_per_mouse" is done for all the mice in the dataset
 
 
-Oocyte release (figure 6)
+Oocyte release
 oocytes_quantification ;
 reads .xlsx file with the quantified data
 
