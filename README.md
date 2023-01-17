@@ -18,6 +18,7 @@ read .xlsx file with data collected with Imaris 'spot' function
 
 
 FP 24/7 10 minutes per hour
+SynFP_get_dF_time_series
 get_time_series_FP_single_trial;
 get data of one trail and calculates dF/F
 get_time_series_FP_per_mouse;
@@ -31,6 +32,7 @@ FP_FFT_output_for_classifier ;
 run classification after 
 
 FP ZT10-13
+SynFP_get_dF
 get_LDtransition_FP_single_trial_v2;
 read data per trial
 get_LDtransition_FP_per_mouse;
