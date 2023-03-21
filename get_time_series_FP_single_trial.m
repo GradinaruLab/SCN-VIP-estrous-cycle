@@ -9,7 +9,7 @@ clear y data
 if nargin==0
    %mouse_info.ID='198R'; mouse_info.side='R';trial_info.rig='SynTDT';
    % mouse_info.ID='200LL'; mouse_info.side='R';
- mouse_info.ID='246RL'; mouse_info.side='R';trial_info.rig='SynTDT';
+% mouse_info.ID='246RL'; mouse_info.side='R';trial_info.rig='SynTDT';
 % mouse_info.ID='259R'; mouse_info.side='R';trial_info.rig='SynTDT';
    % mouse_info.ID='260L'; mouse_info.side='L';
 %   mouse_info.ID='261RL'; mouse_info.side='R';trial_info.rig='SynTDT';
@@ -17,6 +17,8 @@ if nargin==0
  %    mouse_info.ID='273RL'; mouse_info.side='R'; trial_info.rig='TDT';
     %   mouse_info.ID='288RL'; mouse_info.side='R';trial_info.rig='SynTDT';% male
      %   mouse_info.ID='313RL'; mouse_info.side='R';trial_info.rig='SynTDT';%female
+     
+     mouse_info.ID='3XXL'; mouse_info.side='R';trial_info.rig='SynTDT';
    
     %trial_info.date='102020';%MMDDYY
      trial_info.date='082620';%MMDDYY
@@ -25,7 +27,7 @@ if nargin==0
    
     trial_info.show=1;
     trial_info.path='D:\DATA_Glab\fiberphotometry\';
-    analysis_params.std_thresh=1.5;
+    analysis_params.std_thresh=1.5; % for event detection 
     plot_fft=1;
 else
     plot_fft=0;
@@ -37,7 +39,7 @@ rig=trial_info.rig;
 
 
 load([trial_info.path '\TDT_TimeSeries\VIPGC' mouse_info.ID '_' mouse_info.side 'fiber_' trial_info.date '_TimeSeriesSess' num2str(trial_info.sess_num) '.mat'])
-%load('VIPGC198R_Rfiber_063020_TimeSeriesSess8.mat')
+%load('VIPGC198R_Rfiber_063020_TimeSeriesSess8.mat')% an example for the file name format
 data=y;
 % switch rig;     case 'TDT';  fs = data{1}.fs; % TDT FP rig; 
 %                 case 'SynTDT'; fs = data{1}.fs; %Syn TDT FP rig 
@@ -55,8 +57,8 @@ params.fs=fs;
 % recording starts at 9am. dark starts at 13:00 the 6th time is complete
 % dark
 %dark_sessions=[6:17]; 
-nS=9;
-nE=15;
+nS=9;% (start recordings 4 hours before dark)+5 hours into night
+nE=15; % 
 dark_sessions=[nS:nE]; 
 if strcmp(trial_info.date,'071720'); dark_sessions=[nS:9];end % recording stopped in the middle
 if strcmp(trial_info.date,'070620')&&strcmp(mouse_info.ID,'198R'); dark_sessions=[nS:7];end %  fiber was out
@@ -110,6 +112,7 @@ analysis_params.peak_thresh=nanmean(dF_array)+analysis_params.std_thresh*std(dF_
 % calculates event params
 for hi=1:size(dF,1)
     if mean(isnan(dF(hi,:)))==0
+    % using findpeaks to find events (Matlab)
         [allpks{hi},alllocs{hi},allw{hi},allp{hi}]=findpeaks(dF(hi,floor(30*fs):end),t(hi,floor(30*fs):end),'Annotate','extents','MinPeakProminence', analysis_params.peak_thresh);
         
 %         figure
