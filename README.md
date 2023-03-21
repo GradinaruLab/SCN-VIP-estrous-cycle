@@ -18,13 +18,14 @@ read .xlsx file with data collected with Imaris 'spot' function
 
 
 FP 24/7 10 minutes per hour
-SynFP_get_dF_time_series
+SynFP_get_dF_time_series;
 get_time_series_FP_single_trial;
 get data of one trail and calculates dF/F
-get_time_series_FP_per_mouse;
-analyse dataset of one mouse 
 
-get_time_series_FP
+get_time_series_FP_per_mouse;
+analyse dataset of one mouse
+
+get_time_series_FP;
 read the whole dataset 
 
 FP 24/7 FFT cross-validation classification
